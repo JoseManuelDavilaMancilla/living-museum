@@ -124,5 +124,19 @@
   "language": "en",
   "pair_id": "yuanmingyuan-ruins",
   "created_at": "2026-11-03T16:44:50+00:00"
+ },
+ {
+  "id": "gh-1",
+  "title": "Houhai winter swimmers",
+  "story": "Every winter morning, swimmers cut holes in the ice of Houhai lake and go in, one after another, caps on, towels ready. This test entry checks the publish pipeline.",
+  "year": 2024,
+  "lat": 39.9405,
+  "lng": 116.3835,
+  "photo": "media/gh-1/photo.jpg",
+  "thumb": "media/gh-1/thumb.jpg",
+  "credit": "pipeline test",
+  "language": "en",
+  "pair_id": null,
+  "created_at": "2026-11-04T06:25:36Z"
  }
 ]
