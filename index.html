@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Living Museum of Beijing</title>
+<meta name="description" content="An interactive map of Beijing told in photos and stories, layer by layer, year by year.">
+<link rel="icon" href="img/seal.svg" type="image/svg+xml">
+<link rel="stylesheet" href="js/vendor/leaflet.css">
+<link rel="stylesheet" href="js/vendor/MarkerCluster.css">
+<link rel="stylesheet" href="js/vendor/MarkerCluster.Default.css">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body class="page-map">
+
+<header class="topbar">
+  <a class="brand" href="">
+    <span class="brand-seal" aria-hidden="true">京</span>
+    <span class="brand-text">Living Museum<span class="brand-of">of Beijing</span></span>
+  </a>
+  <nav class="topnav">
+    <a href="" class="active" data-i18n="nav-map">Map</a>
+    <a href="submit.html" data-i18n="nav-contribute">Contribute</a>
+    <a href="about.html" data-i18n="nav-about">About</a>
+    <button class="lang-toggle" id="lang-toggle" type="button" aria-label="Switch language">中文</button>
+  </nav>
+</header>
+
+<main class="map-main">
+  <div id="map" class="map-canvas" role="application" aria-label="Map of Beijing with photo stories"></div>
+
+  <section class="years-panel glass" aria-label="Year layers">
+    <div class="years-head">
+      <span class="years-title" data-i18n="years-title">Years</span>
+      <span class="years-count" id="years-count"></span>
+    </div>
+    <div class="chips" id="decade-chips" role="tablist"></div>
+    <div class="slider-row">
+      <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2v5a5 5 0 0 0 10 0V2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2 2h2M12 2h2M8 10v4" stroke="currentColor" stroke-width="1.6"/></svg>
+      <input type="range" id="decade-slider" min="0" max="1" value="0" step="1" aria-label="Time slider">
+      <button class="play-btn" id="play-btn" type="button" aria-label="Play through time">
+        <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>
+      </button>
+    </div>
+    <div class="era-row">
+      <span class="era-label" data-i18n="era-label">Era maps</span>
+      <div class="era-toggles" id="era-toggles"></div>
+    </div>
+  </section>
+
+  <aside class="detail-panel glass" id="detail-panel" hidden aria-label="Story detail">
+    <button class="detail-close" id="detail-close" type="button" aria-label="Close">
+      <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <img class="detail-photo" id="detail-photo" alt="">
+    <div class="detail-body">
+      <div class="detail-meta">
+        <span class="year-chip" id="detail-year"></span>
+        <a class="detail-photo-link" id="detail-photo-link" target="_blank" rel="noopener" data-i18n="open-photo">Open photo</a>
+      </div>
+      <h2 class="detail-title" id="detail-title"></h2>
+      <p class="detail-story" id="detail-story"></p>
+      <p class="detail-credit" id="detail-credit"></p>
+    </div>
+  </aside>
+
+  <a class="fab" href="submit.html" aria-label="Contribute a photo">
+    <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span data-i18n="fab-add">Add a photo</span>
+  </a>
+
+  <div class="map-hint glass" id="map-hint" data-i18n="hint">Tap a photo to read its story</div>
+</main>
+
+<script src="js/i18n.js"></script>
+<script src="js/tiles.js"></script>
+<script src="js/vendor/leaflet.js"></script>
+<script src="js/vendor/leaflet.markercluster.js"></script>
+<script src="js/map.js"></script>
+</body>
+</html>
