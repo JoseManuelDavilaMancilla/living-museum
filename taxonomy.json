@@ -1,0 +1,87 @@
+[
+ {
+  "key": "family",
+  "en": "Family",
+  "zh": "家庭"
+ },
+ {
+  "key": "friends",
+  "en": "Friends",
+  "zh": "朋友"
+ },
+ {
+  "key": "night-out",
+  "en": "Night out",
+  "zh": "夜生活"
+ },
+ {
+  "key": "graduation",
+  "en": "Graduation",
+  "zh": "毕业"
+ },
+ {
+  "key": "old-home",
+  "en": "Old home",
+  "zh": "老住处"
+ },
+ {
+  "key": "school",
+  "en": "School",
+  "zh": "校园"
+ },
+ {
+  "key": "work",
+  "en": "Work",
+  "zh": "工作"
+ },
+ {
+  "key": "street-scene",
+  "en": "Street scene",
+  "zh": "街景"
+ },
+ {
+  "key": "landmark",
+  "en": "Landmark",
+  "zh": "地标"
+ },
+ {
+  "key": "festival",
+  "en": "Festival",
+  "zh": "节日"
+ },
+ {
+  "key": "sports",
+  "en": "Sports",
+  "zh": "运动"
+ },
+ {
+  "key": "olympics-2008",
+  "en": "Olympics 2008",
+  "zh": "2008 奥运"
+ },
+ {
+  "key": "food",
+  "en": "Food",
+  "zh": "美食"
+ },
+ {
+  "key": "transport",
+  "en": "Transport",
+  "zh": "交通"
+ },
+ {
+  "key": "nature",
+  "en": "Nature",
+  "zh": "自然"
+ },
+ {
+  "key": "winter",
+  "en": "Winter",
+  "zh": "冬天"
+ },
+ {
+  "key": "summer",
+  "en": "Summer",
+  "zh": "夏天"
+ }
+]

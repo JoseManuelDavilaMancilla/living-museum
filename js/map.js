@@ -1,5 +1,6 @@
 /* Living Museum of Beijing — map page.
-   Photo markers on a Beijing-locked map, filtered by year layers.
+   Two data modes: "server" (FastAPI: viewport queries, aggregated dots at low
+   zoom) and "static" (entries.json snapshot, everything client-side).
    Basemap provider comes from tiles.js (LM_tileLayer). */
 (function () {
   "use strict";
@@ -19,8 +20,21 @@
   ];
 
   const BEIJING_BOUNDS = [[39.4, 115.4], [41.0, 117.5]];
+  const PHOTO_ZOOM = 14;
 
-  let map, cluster, entries = [], filter = "all", playTimer = null;
+  // mode: "server" | "static"
+  const state = {
+    mode: "static",
+    filter: "all",
+    theme: null,
+    entries: [],        // static cache / current photo-mode results
+    stats: { total: 0, decades: {}, tags: [] },
+    taxonomy: [],       // [{key,en,zh}]
+    reqId: 0,
+    featured: null
+  };
+
+  let map, cluster, dotLayer;
   const eraLayers = new Map();
 
   function decadeKey(year) {
@@ -28,17 +42,29 @@
     return String(Math.floor(year / 10) * 10);
   }
 
-  function bucketOrder(entries) {
-    const keys = new Set(entries.map(function (e) { return decadeKey(e.year); }));
+  function decadeRange(key) {
+    if (key === "pre") return [1800, 1899];
+    const start = Number(key);
+    return [start, start + 9];
+  }
+
+  function bucketOrder() {
+    const keys = state.stats.decades || {};
     const order = [];
-    if (keys.has("pre")) order.push("pre");
-    for (let d = 1900; d <= 2020; d += 10) if (keys.has(String(d))) order.push(String(d));
+    if (keys.pre) order.push("pre");
+    for (let d = 1900; d <= 2020; d += 10) if (keys[String(d)]) order.push(String(d));
     return order;
   }
 
   function bucketLabel(key) {
     if (key === "pre") return LM.t("pre-1900");
     return key + "s";
+  }
+
+  function tagLabel(key) {
+    const t = state.taxonomy.find(function (x) { return x.key === key; });
+    if (!t) return key;
+    return LM.lang() === "zh" ? t.zh : t.en;
   }
 
   function initMap() {
@@ -70,12 +96,17 @@
       }
     });
     map.addLayer(cluster);
+    dotLayer = L.layerGroup().addTo(map);
+
     // Leaflet can swallow document-level clicks; close the share popover on map clicks too
     map.on("click", function () {
       document.getElementById("share-sheet").hidden = true;
+      hideSearchDrop();
     });
     window.__lm_map = map; // test/QA handle
   }
+
+  // ---------- rendering ----------
 
   function markerFor(e) {
     const icon = L.divIcon({
@@ -89,18 +120,112 @@
     return m;
   }
 
-  function visibleEntries() {
-    if (filter === "all") return entries;
-    return entries.filter(function (e) { return decadeKey(e.year) === filter; });
+  function renderPhotos(list) {
+    state.entries = list;
+    cluster.clearLayers();
+    cluster.addLayers(list.map(markerFor));
+    setCount(list.length);
   }
 
-  function rebuild() {
-    cluster.clearLayers();
-    const vis = visibleEntries();
-    const marks = vis.map(markerFor);
-    cluster.addLayers(marks);
-    document.getElementById("years-count").textContent = LM.t("count")(vis.length, entries.length);
+  function dotStyle(count) {
+    const r = Math.min(16, 5 + Math.sqrt(count) * 2.2);
+    return {
+      radius: r,
+      color: "#FFFFFF",
+      weight: 1.5,
+      fillColor: "#B23A2E",
+      fillOpacity: 0.5,
+      className: "lm-dot"
+    };
   }
+
+  function renderCellDots(cells) {
+    dotLayer.clearLayers();
+    let sum = 0;
+    cells.forEach(function (c) {
+      sum += c.count;
+      const d = L.circleMarker([c.lat, c.lng], dotStyle(c.count));
+      d.on("click", function () {
+        map.setView([c.lat, c.lng], Math.max(PHOTO_ZOOM, map.getZoom() + 2));
+      });
+      d.bindTooltip(String(c.count), { direction: "top", offset: [0, -6] });
+      dotLayer.addLayer(d);
+    });
+    setCount(sum);
+  }
+
+  function renderLocalDots(list) {
+    dotLayer.clearLayers();
+    list.forEach(function (e) {
+      const d = L.circleMarker([e.lat, e.lng], dotStyle(1));
+      d.on("click", function () { showDetail(e); });
+      dotLayer.addLayer(d);
+    });
+    setCount(list.length);
+  }
+
+  function setCount(shown) {
+    document.getElementById("years-count").textContent =
+      LM.t("count")(shown, state.stats.total || shown);
+  }
+
+  // ---------- data ----------
+
+  function staticVisible() {
+    return state.entries.filter(function (e) {
+      if (state.filter !== "all" && decadeKey(e.year) !== state.filter) return false;
+      if (state.theme && !(e.tags || []).includes(state.theme)) return false;
+      return true;
+    });
+  }
+
+  function refresh() {
+    cluster.clearLayers();
+    dotLayer.clearLayers();
+    if (state.mode === "static") {
+      const vis = staticVisible();
+      if (map.getZoom() >= PHOTO_ZOOM) renderPhotos(vis);
+      else renderLocalDots(vis);
+      return;
+    }
+    // server mode: debounced viewport query
+    const myReq = ++state.reqId;
+    clearTimeout(refresh._t);
+    refresh._t = setTimeout(function () { viewportQuery(myReq); }, 200);
+  }
+
+  function filterParams() {
+    const p = new URLSearchParams();
+    if (state.filter !== "all") {
+      const r = decadeRange(state.filter);
+      p.set("yearmin", r[0]);
+      p.set("yearmax", r[1]);
+    }
+    if (state.theme) p.set("tag", state.theme);
+    return p;
+  }
+
+  function viewportQuery(myReq) {
+    const b = map.getBounds();
+    const p = filterParams();
+    p.set("bbox", [
+      b.getWest(), b.getSouth(), b.getEast(), b.getNorth()
+    ].map(function (v) { return v.toFixed(5); }).join(","));
+    const z = map.getZoom();
+    p.set("zoom", z);
+    fetch("/api/entries?" + p.toString())
+      .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
+      .then(function (data) {
+        if (myReq !== state.reqId) return; // stale response
+        if (z >= PHOTO_ZOOM) renderPhotos(data);
+        else renderCellDots(data);
+      })
+      .catch(function () {
+        if (myReq === state.reqId) setCount(0);
+      });
+  }
+
+  // ---------- controls ----------
 
   function buildChips() {
     const wrap = document.getElementById("decade-chips");
@@ -108,26 +233,52 @@
     const mk = function (key, label) {
       const b = document.createElement("button");
       b.type = "button";
-      b.className = "chip" + (filter === key ? " on" : "");
+      b.className = "chip" + (state.filter === key ? " on" : "");
       b.textContent = label;
       b.addEventListener("click", function () { setFilter(key); });
       wrap.appendChild(b);
     };
     mk("all", LM.t("all"));
-    bucketOrder(entries).forEach(function (k) { mk(k, bucketLabel(k)); });
+    bucketOrder().forEach(function (k) { mk(k, bucketLabel(k)); });
+
+    // theme chips (only tags in use)
+    const tw = document.getElementById("theme-chips");
+    tw.innerHTML = "";
+    const tAll = document.createElement("button");
+    tAll.type = "button";
+    tAll.className = "chip" + (state.theme === null ? " on" : "");
+    tAll.textContent = LM.t("all");
+    tAll.addEventListener("click", function () {
+      state.theme = null;
+      buildChips();
+      refresh();
+    });
+    tw.appendChild(tAll);
+    (state.stats.tags || []).forEach(function (t) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip theme-chip" + (state.theme === t.key ? " on" : "");
+      b.textContent = tagLabel(t.key) + " " + t.count;
+      b.addEventListener("click", function () {
+        state.theme = state.theme === t.key ? null : t.key;
+        buildChips();
+        refresh();
+      });
+      tw.appendChild(b);
+    });
   }
 
   function setFilter(key, opts) {
-    filter = key;
+    state.filter = key;
     buildChips();
-    const order = bucketOrder(entries);
+    const order = bucketOrder();
     const slider = document.getElementById("decade-slider");
     if (key !== "all") {
       const idx = order.indexOf(key);
       if (idx >= 0) { slider.value = String(idx); updateSliderFill(slider); }
     }
     if (!(opts && opts.fromPlay)) stopPlay();
-    rebuild();
+    refresh();
   }
 
   function updateSliderFill(slider) {
@@ -145,7 +296,7 @@
 
   function initControls() {
     const slider = document.getElementById("decade-slider");
-    const order = bucketOrder(entries);
+    const order = bucketOrder();
     slider.min = "0";
     slider.max = String(Math.max(1, order.length - 1));
     updateSliderFill(slider);
@@ -158,7 +309,7 @@
       if (playTimer) { stopPlay(); return; }
       const btn = this;
       btn.classList.add("playing");
-      let i = order.indexOf(filter) + 1;
+      let i = order.indexOf(state.filter) + 1;
       playTimer = setInterval(function () {
         if (i >= order.length) { stopPlay(); return; }
         slider.value = String(i);
@@ -169,7 +320,6 @@
     });
 
     buildChips();
-    rebuild();
   }
 
   // ---------- detail panel ----------
@@ -179,7 +329,8 @@
 
   function pairOf(e) {
     if (!e.pair_id) return null;
-    return entries.find(function (o) {
+    if (e._pairLoaded) return e._pairLoaded;
+    return state.entries.find(function (o) {
       return o.pair_id === e.pair_id && o.id !== e.id;
     }) || null;
   }
@@ -492,38 +643,237 @@
     }
   }
 
+  // ---------- search ----------
+
+  function hideSearchDrop() {
+    document.getElementById("search-drop").hidden = true;
+  }
+
+  function searchDropItem(e) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "sd-item";
+    const img = document.createElement("img");
+    img.src = e.thumb; img.alt = "";
+    const body = document.createElement("span");
+    body.className = "sd-body";
+    const t = document.createElement("span");
+    t.className = "sd-title";
+    t.textContent = e.title;
+    const sub = document.createElement("span");
+    sub.className = "sd-sub";
+    sub.textContent = e.year;
+    body.appendChild(t); body.appendChild(sub);
+    item.appendChild(img); item.appendChild(body);
+    item.addEventListener("click", function () {
+      hideSearchDrop();
+      document.getElementById("search-input").value = "";
+      flyToEntry(e);
+    });
+    return item;
+  }
+
+  function flyToEntry(e) {
+    map.setView([e.lat, e.lng], Math.max(map.getZoom(), PHOTO_ZOOM));
+    if (state.mode === "server" && (!e.pair && e.pair_id)) {
+      // fetch full entry so the then/now pair loads with it
+      fetch("/api/entry/" + e.id)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (full) {
+          if (!full) return showDetail(e);
+          full._pairLoaded = full.pair || null;
+          showDetail(full);
+        });
+    } else {
+      showDetail(e);
+    }
+  }
+
+  function runSearch(q) {
+    const drop = document.getElementById("search-drop");
+    if (!q || q.trim().length < 1) { drop.hidden = true; return; }
+    const fill = function (list) {
+      drop.innerHTML = "";
+      if (!list.length) {
+        const empty = document.createElement("div");
+        empty.className = "sd-empty";
+        empty.textContent = LM.t("no-results");
+        drop.appendChild(empty);
+      } else {
+        list.slice(0, 8).forEach(function (e) { drop.appendChild(searchDropItem(e)); });
+      }
+      drop.hidden = false;
+    };
+    if (state.mode === "server") {
+      fetch("/api/search?q=" + encodeURIComponent(q.trim()))
+        .then(function (r) { return r.json(); })
+        .then(fill)
+        .catch(function () { drop.hidden = true; });
+    } else {
+      const needle = q.trim().toLowerCase();
+      fill(state.entries.filter(function (e) {
+        return (e.title + " " + e.story + " " + e.year + " " + (e.tags || []).join(" "))
+          .toLowerCase().includes(needle);
+      }));
+    }
+  }
+
+  function initSearch() {
+    const input = document.getElementById("search-input");
+    let t = null;
+    input.addEventListener("input", function () {
+      clearTimeout(t);
+      t = setTimeout(function () { runSearch(input.value); }, 220);
+    });
+    input.addEventListener("focus", function () {
+      if (input.value.trim()) runSearch(input.value);
+    });
+    document.addEventListener("click", function (ev) {
+      const box = document.getElementById("searchbox");
+      if (!box.contains(ev.target)) hideSearchDrop();
+    });
+  }
+
+  // ---------- story of the day ----------
+
+  function dayIndex() {
+    return Math.floor(Date.now() / 86400000);
+  }
+
+  function showFeatured() {
+    if (sessionStorage.getItem("lm-featured-off") === String(dayIndex())) return;
+    const card = document.getElementById("featured");
+    const e = state.featured;
+    if (!e) return;
+    document.getElementById("featured-img").src = e.thumb;
+    document.getElementById("featured-title").textContent = e.title;
+    document.getElementById("featured-year").textContent = e.year;
+    const story = e.story.split(/(?<=[.。!?])\s/)[0] || e.story;
+    document.getElementById("featured-excerpt").textContent = story.slice(0, 90);
+    card.hidden = false;
+    document.getElementById("featured-read").onclick = function () {
+      card.hidden = true;
+      flyToEntry(e);
+    };
+    document.getElementById("featured-close").onclick = function () {
+      card.hidden = true;
+      sessionStorage.setItem("lm-featured-off", String(dayIndex()));
+    };
+  }
+
+  function initFeatured() {
+    if (state.mode === "server") {
+      fetch("/api/featured")
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (e) {
+          if (!e) return;
+          if (e.pair) { e._pairLoaded = e.pair; }
+          state.featured = e;
+          showFeatured();
+        })
+        .catch(function () {});
+    } else if (state.entries.length) {
+      state.featured = state.entries[dayIndex() % state.entries.length];
+      showFeatured();
+    }
+  }
+
   // ---------- boot ----------
+
+  function computeStaticStats() {
+    const decades = {};
+    const tagCount = {};
+    state.entries.forEach(function (e) {
+      const k = decadeKey(e.year);
+      decades[k] = (decades[k] || 0) + 1;
+      (e.tags || []).forEach(function (t) { tagCount[t] = (tagCount[t] || 0) + 1; });
+    });
+    state.stats = {
+      total: state.entries.length,
+      decades: decades,
+      tags: Object.keys(tagCount).map(function (k) {
+        return { key: k, count: tagCount[k] };
+      }).sort(function (a, b) { return b.count - a.count; })
+    };
+  }
+
+  function loadTaxonomy(done) {
+    const url = state.mode === "server" ? "/api/taxonomy" : "taxonomy.json";
+    fetch(url)
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .catch(function () { return []; })
+      .then(function (list) { state.taxonomy = list || []; done(); });
+  }
+
+  function openDeepLink() {
+    const want = Number(new URLSearchParams(location.search).get("entry"));
+    if (!want) return;
+    if (state.mode === "server") {
+      fetch("/api/entry/" + want)
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (e) {
+          if (!e) return;
+          if (e.pair) e._pairLoaded = e.pair;
+          map.setView([e.lat, e.lng], Math.max(map.getZoom(), PHOTO_ZOOM));
+          showDetail(e, { fromLoad: true });
+        });
+    } else {
+      const hit = state.entries.find(function (x) { return x.id === want; });
+      if (hit) {
+        map.setView([hit.lat, hit.lng], Math.max(map.getZoom(), PHOTO_ZOOM));
+        showDetail(hit, { fromLoad: true });
+      }
+    }
+  }
+
+  let playTimer = null;
 
   function boot() {
     initMap();
     initEras();
     initDetail();
-    fetch("/api/entries")
+    initSearch();
+    map.on("moveend zoomend", refresh);
+
+    fetch("/api/stats")
       .then(function (r) {
-        if (r.ok) return r.json();
-        throw new Error("http " + r.status);
-      })
-      .catch(function () {
-        // static snapshot (GitHub Pages): no backend, load the frozen data
-        return fetch("entries.json").then(function (r) {
-          if (!r.ok) throw new Error("no static data");
+        if (r.ok) {
+          state.mode = "server";
           return r.json();
+        }
+        throw new Error("no backend");
+      })
+      .then(function (stats) {
+        state.stats = stats;
+        loadTaxonomy(function () {
+          initControls();
+          refresh();
+          initFeatured();
+          openDeepLink();
         });
       })
-      .then(function (data) {
-        entries = data;
-        initControls();
-        // deep link: /?entry=<id> focuses and opens the story
-        const want = Number(new URLSearchParams(location.search).get("entry"));
-        const hit = entries.find(function (x) { return x.id === want; });
-        if (hit) {
-          map.setView([hit.lat, hit.lng], Math.max(map.getZoom(), 15));
-          showDetail(hit, { fromLoad: true });
-        }
-      })
       .catch(function () {
-        document.getElementById("years-count").textContent = "—";
-        document.getElementById("map-hint").textContent = "Could not load stories";
+        // static snapshot (GitHub Pages): load frozen data
+        fetch("entries.json")
+          .then(function (r) {
+            if (!r.ok) throw new Error("no static data");
+            return r.json();
+          })
+          .then(function (data) {
+            state.mode = "static";
+            state.entries = data;
+            computeStaticStats();
+            loadTaxonomy(function () {
+              initControls();
+              refresh();
+              initFeatured();
+              openDeepLink();
+            });
+          })
+          .catch(function () {
+            document.getElementById("years-count").textContent = "—";
+            document.getElementById("map-hint").textContent = "Could not load stories";
+          });
       });
   }
 

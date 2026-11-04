@@ -4,6 +4,7 @@
 
   const $ = function (id) { return document.getElementById(id); };
   let status = "pending";
+  let TAX = []; // taxonomy [{key,en,zh}]
   const miniMaps = [];
 
   async function api(path, opts) {
@@ -97,6 +98,35 @@
     mapDiv.id = "m-" + e.id;
     body.appendChild(mapDiv);
 
+    // taxonomy tag toggles (saved immediately)
+    const tagBlock = document.createElement("div");
+    const tagLabel = document.createElement("span");
+    tagLabel.className = "tag-label";
+    tagLabel.textContent = "Tags";
+    tagBlock.appendChild(tagLabel);
+    const tagRow = document.createElement("div");
+    tagRow.className = "tagrow";
+    const current = new Set(e.tags || []);
+    TAX.forEach(function (t) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "tagchip" + (current.has(t.key) ? " on" : "");
+      b.textContent = t.en;
+      b.title = t.key;
+      b.addEventListener("click", function () {
+        if (current.has(t.key)) current.delete(t.key); else current.add(t.key);
+        b.classList.toggle("on", current.has(t.key));
+        api("/api/admin/entries/" + e.id + "/tags", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tags: [...current] })
+        }).catch(function (err) { alert(err.message); });
+      });
+      tagRow.appendChild(b);
+    });
+    tagBlock.appendChild(tagRow);
+    body.appendChild(tagBlock);
+
     const actions = document.createElement("div");
     actions.className = "qcard-actions";
 
@@ -186,6 +216,9 @@
   async function load() {
     miniMaps.forEach(function (m) { m.remove(); });
     miniMaps.length = 0;
+    if (!TAX.length) {
+      TAX = await fetch("/api/taxonomy").then(function (r) { return r.json(); }).catch(function () { return []; });
+    }
     const list = await api("/api/admin/entries?status=" + status);
     const q = $("queue");
     q.innerHTML = "";

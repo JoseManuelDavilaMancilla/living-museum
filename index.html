@@ -19,6 +19,11 @@
     <span class="brand-text">Living Museum<span class="brand-of">of Beijing</span></span>
   </a>
   <nav class="topnav">
+    <div class="searchbox" id="searchbox">
+      <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <input type="search" id="search-input" data-i18n-ph="search-ph" placeholder="Search stories…" autocomplete="off" aria-label="Search stories">
+      <div class="search-drop glass" id="search-drop" hidden></div>
+    </div>
     <a href="" class="active" data-i18n="nav-map">Map</a>
     <a href="submit.html" data-i18n="nav-contribute">Contribute</a>
     <a href="about.html" data-i18n="nav-about">About</a>
@@ -35,6 +40,10 @@
       <span class="years-count" id="years-count"></span>
     </div>
     <div class="chips" id="decade-chips" role="tablist"></div>
+    <div class="theme-block">
+      <span class="years-title" data-i18n="themes">Themes</span>
+      <div class="chips" id="theme-chips"></div>
+    </div>
     <div class="slider-row">
       <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2v5a5 5 0 0 0 10 0V2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M2 2h2M12 2h2M8 10v4" stroke="currentColor" stroke-width="1.6"/></svg>
       <input type="range" id="decade-slider" min="0" max="1" value="0" step="1" aria-label="Time slider">
@@ -86,6 +95,20 @@
       <p class="detail-credit" id="detail-credit"></p>
     </div>
   </aside>
+
+  <div class="featured glass" id="featured" hidden>
+    <img id="featured-img" alt="">
+    <div class="featured-body">
+      <span class="featured-kicker" data-i18n="story-of-day">Story of the day</span>
+      <span class="featured-title" id="featured-title"></span>
+      <span class="featured-year" id="featured-year"></span>
+      <span class="featured-excerpt" id="featured-excerpt"></span>
+      <button class="featured-read" id="featured-read" type="button" data-i18n="read-story">Read the story</button>
+    </div>
+    <button class="featured-close" id="featured-close" type="button" aria-label="Close">
+      <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
 
   <a class="fab" href="submit.html" aria-label="Contribute a photo">
     <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>

@@ -11,7 +11,11 @@
   "credit": "Wikimedia Commons, CC0",
   "language": "en",
   "pair_id": "yuanmingyuan-ruins",
-  "created_at": "2026-11-03T16:41:12+00:00"
+  "created_at": "2026-11-03T16:41:12+00:00",
+  "tags": [
+   "nature",
+   "old-home"
+  ]
  },
  {
   "id": 2,
@@ -25,7 +29,10 @@
   "credit": "Wikimedia Commons, public domain",
   "language": "en",
   "pair_id": null,
-  "created_at": "2026-11-03T16:41:00+00:00"
+  "created_at": "2026-11-03T16:41:00+00:00",
+  "tags": [
+   "landmark"
+  ]
  },
  {
   "id": 4,
@@ -39,7 +46,8 @@
   "credit": "Wikimedia Commons, public domain",
   "language": "en",
   "pair_id": null,
-  "created_at": "2026-11-03T16:41:08+00:00"
+  "created_at": "2026-11-03T16:41:08+00:00",
+  "tags": []
  },
  {
   "id": 8,
@@ -53,7 +61,8 @@
   "credit": "Wikimedia Commons, public domain",
   "language": "en",
   "pair_id": null,
-  "created_at": "2026-11-03T16:42:39+00:00"
+  "created_at": "2026-11-03T16:42:39+00:00",
+  "tags": []
  },
  {
   "id": 5,
@@ -67,7 +76,8 @@
   "credit": "Chandless collection, Wikimedia Commons, public domain",
   "language": "en",
   "pair_id": null,
-  "created_at": "2026-11-03T16:41:09+00:00"
+  "created_at": "2026-11-03T16:41:09+00:00",
+  "tags": []
  },
  {
   "id": 1,
@@ -81,7 +91,10 @@
   "credit": "Wikimedia Commons, public domain",
   "language": "en",
   "pair_id": null,
-  "created_at": "2026-11-03T16:40:58+00:00"
+  "created_at": "2026-11-03T16:40:58+00:00",
+  "tags": [
+   "landmark"
+  ]
  },
  {
   "id": 3,
@@ -95,7 +108,8 @@
   "credit": "Detroit Publishing Co., Wikimedia Commons, public domain",
   "language": "en",
   "pair_id": null,
-  "created_at": "2026-11-03T16:41:06+00:00"
+  "created_at": "2026-11-03T16:41:06+00:00",
+  "tags": []
  },
  {
   "id": 7,
@@ -109,7 +123,8 @@
   "credit": "Thomas Child, Wikimedia Commons, public domain",
   "language": "en",
   "pair_id": null,
-  "created_at": "2026-11-03T16:42:38+00:00"
+  "created_at": "2026-11-03T16:42:38+00:00",
+  "tags": []
  },
  {
   "id": 9,
@@ -123,6 +138,9 @@
   "credit": "Thomas Child, Wikimedia Commons, public domain",
   "language": "en",
   "pair_id": "yuanmingyuan-ruins",
-  "created_at": "2026-11-03T16:44:50+00:00"
+  "created_at": "2026-11-03T16:44:50+00:00",
+  "tags": [
+   "landmark"
+  ]
  }
 ]
