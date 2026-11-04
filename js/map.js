@@ -70,6 +70,10 @@
       }
     });
     map.addLayer(cluster);
+    // Leaflet can swallow document-level clicks; close the share popover on map clicks too
+    map.on("click", function () {
+      document.getElementById("share-sheet").hidden = true;
+    });
     window.__lm_map = map; // test/QA handle
   }
 

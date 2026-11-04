@@ -25,6 +25,9 @@
 }
 
 * { box-sizing: border-box; }
+/* The hidden attribute loses to author display rules (e.g. .detail-panel's
+   display:flex); enforce it so hidden panels never render. */
+[hidden] { display: none !important; }
 html, body { margin: 0; padding: 0; height: 100%; }
 body {
   font-family: var(--font);
