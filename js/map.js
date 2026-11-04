@@ -5,10 +5,10 @@
 (function () {
   "use strict";
 
-  // Historical era overlays. DISABLED 2026-11-05: the MapWarper "Peking 1914"
-  // community warp (map 54747) is displaced ~300-400m and its scan is only
-  // 1951px wide. Replacement path: georeference the David Rumsey 1914 sheet
-  // (List No. 10959, IIIF) in Allmaps, then serve its tiles at
+  // Historical era overlays (registry for future layers). Adding a tileUrl
+  // makes the era section appear; the section stays hidden while empty.
+  // Next candidates: Rumsey "Map & Guide of Peking" 1914 (List 10959) and
+  // Frank Dorn 1936, georeferenced once in Allmaps, tiles at
   // https://allmaps.org/maps/{id}/tiles/{z}/{x}/{y}.png. See references.md.
   const ERAS = [
     { id: "peking1914", name: "Peking, 1914", nameZh: "北京 · 1914", tileUrl: null },
@@ -594,6 +594,12 @@
 
   function initEras() {
     const wrap = document.getElementById("era-toggles");
+    // Show the era section only when at least one verified tile layer exists.
+    // Until then the museum shows nothing rather than a promise.
+    if (!ERAS.some(function (e) { return e.tileUrl; })) {
+      document.querySelector(".era-row").style.display = "none";
+      return;
+    }
     ERAS.forEach(function (era) {
       const row = document.createElement("div");
       row.className = "era-item";
