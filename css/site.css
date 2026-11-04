@@ -233,8 +233,52 @@ input[type="range"]::-moz-range-thumb {
 }
 .detail-close:hover { transform: scale(1.06); }
 .detail-photo { width: 100%; max-height: 300px; object-fit: cover; background: #E8E2DA; }
-.detail-body { padding: 14px 18px 18px; overflow-y: auto; }
-.detail-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+
+/* then-and-now compare */
+.compare-wrap {
+  position: relative;
+  height: 300px;
+  background: #E8E2DA;
+  touch-action: none;
+  cursor: ew-resize;
+  user-select: none;
+  overflow: hidden;
+}
+.cmp-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.cmp-new { clip-path: inset(0 0 0 var(--x, 50%)); }
+.cmp-divider {
+  position: absolute; top: 0; bottom: 0; left: var(--x, 50%);
+  width: 2px; background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 8px rgba(29, 28, 26, 0.35);
+  pointer-events: none;
+}
+.cmp-divider .icon {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 34px; height: 34px;
+  padding: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--ink);
+  box-shadow: var(--shadow-soft);
+}
+.cmp-label {
+  position: absolute; top: 12px; left: 12px;
+  background: rgba(29, 28, 26, 0.62);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 12px; font-weight: 650;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.cmp-label-r { left: auto; right: 12px; }
+
+.detail-body { padding: 14px 18px 18px; overflow-y: auto; position: relative; }
+.detail-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.year-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .year-chip {
   display: inline-block;
   background: var(--accent-soft);
@@ -244,7 +288,34 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 999px;
   font-variant-numeric: tabular-nums;
 }
+.detail-links { display: flex; align-items: center; gap: 10px; flex: none; }
+.detail-share {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: none; background: transparent;
+  color: var(--ink-2);
+  font-size: 12.5px; font-weight: 550; font-family: inherit;
+  cursor: pointer; padding: 2px 0;
+  transition: color var(--dur) var(--ease);
+}
+.detail-share:hover { color: var(--accent); }
 .detail-photo-link { font-size: 12.5px; font-weight: 550; }
+
+.share-sheet {
+  position: absolute; top: 40px; right: 14px; z-index: 6;
+  display: flex; flex-direction: column;
+  min-width: 190px;
+  padding: 6px;
+  animation: panel-in 160ms var(--ease);
+}
+.share-sheet button {
+  display: flex; align-items: center; gap: 9px;
+  border: none; background: transparent; font-family: inherit;
+  font-size: 13.5px; font-weight: 550; color: var(--ink);
+  padding: 9px 12px; border-radius: 10px;
+  cursor: pointer; text-align: left;
+  transition: background var(--dur) var(--ease);
+}
+.share-sheet button:hover { background: rgba(29, 28, 26, 0.06); }
 .detail-title { margin: 0 0 8px; font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
 .detail-story { margin: 0; font-size: 14.5px; line-height: 1.62; color: #3A3631; white-space: pre-line; }
 .detail-credit { margin: 12px 0 0; font-size: 12.5px; color: var(--ink-3); }

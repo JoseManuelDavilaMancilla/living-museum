@@ -171,10 +171,47 @@
   // ---------- detail panel ----------
 
   let hintHidden = false;
-  function showDetail(e) {
+  let currentEntry = null;
+
+  function pairOf(e) {
+    if (!e.pair_id) return null;
+    return entries.find(function (o) {
+      return o.pair_id === e.pair_id && o.id !== e.id;
+    }) || null;
+  }
+
+  function entryUrl(e) {
+    const base = location.pathname.replace(/[^/]*$/, "");
+    return location.origin + base + "e/" + e.id + "/";
+  }
+
+  function showDetail(e, opts) {
+    currentEntry = e;
+    const pair = pairOf(e);
     const panel = document.getElementById("detail-panel");
-    document.getElementById("detail-photo").src = e.photo;
-    document.getElementById("detail-photo").alt = e.title;
+
+    const photo = document.getElementById("detail-photo");
+    const cmp = document.getElementById("compare-wrap");
+    if (pair) {
+      const older = e.year <= pair.year ? e : pair;
+      const newer = older === e ? pair : e;
+      photo.hidden = true;
+      cmp.hidden = false;
+      document.getElementById("cmp-old").src = older.photo;
+      document.getElementById("cmp-new").src = newer.photo;
+      document.getElementById("cmp-old-year").textContent = older.year;
+      document.getElementById("cmp-new-year").textContent = newer.year;
+      cmp.style.setProperty("--x", "50%");
+      const pairChip = document.getElementById("detail-year-pair");
+      pairChip.hidden = false;
+      pairChip.textContent = pair.year;
+    } else {
+      photo.hidden = false;
+      cmp.hidden = true;
+      document.getElementById("detail-year-pair").hidden = true;
+      photo.src = e.photo;
+      photo.alt = e.title;
+    }
     document.getElementById("detail-photo-link").href = e.photo;
     document.getElementById("detail-year").textContent = e.year;
     document.getElementById("detail-title").textContent = e.title;
@@ -183,20 +220,223 @@
     creditEl.textContent = e.credit
       ? LM.t("credit-prefix") + " · " + e.credit
       : "";
+    document.getElementById("share-sheet").hidden = true;
     panel.hidden = false;
+
+    if (!(opts && opts.fromLoad)) {
+      const url = location.pathname + "?entry=" + e.id;
+      history.replaceState(null, "", url);
+    }
     if (!hintHidden) {
       hintHidden = true;
       document.getElementById("map-hint").classList.add("hide");
     }
   }
 
+  function closeDetail() {
+    document.getElementById("detail-panel").hidden = true;
+    document.getElementById("share-sheet").hidden = true;
+    currentEntry = null;
+    if (location.search.includes("entry=")) {
+      history.replaceState(null, "", location.pathname);
+    }
+  }
+
+  // then-and-now drag
+  function initCompare() {
+    const cmp = document.getElementById("compare-wrap");
+    let dragging = false;
+    const setFromEvent = function (ev) {
+      const r = cmp.getBoundingClientRect();
+      const x = (ev.clientX - r.left) / r.width;
+      cmp.style.setProperty("--x", (Math.min(0.97, Math.max(0.03, x)) * 100) + "%");
+    };
+    cmp.addEventListener("pointerdown", function (ev) {
+      dragging = true;
+      cmp.setPointerCapture(ev.pointerId);
+      setFromEvent(ev);
+    });
+    cmp.addEventListener("pointermove", function (ev) {
+      if (dragging) setFromEvent(ev);
+    });
+    cmp.addEventListener("pointerup", function () { dragging = false; });
+    cmp.addEventListener("pointercancel", function () { dragging = false; });
+  }
+
+  // ---------- share ----------
+
+  function initShare() {
+    const sheet = document.getElementById("share-sheet");
+    document.getElementById("share-btn").addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      sheet.hidden = !sheet.hidden;
+    });
+    document.addEventListener("click", function (ev) {
+      if (!sheet.hidden && !sheet.contains(ev.target) && ev.target.id !== "share-btn") {
+        sheet.hidden = true;
+      }
+    });
+
+    document.getElementById("copy-link").addEventListener("click", function () {
+      if (!currentEntry) return;
+      const url = entryUrl(currentEntry);
+      const done = function () {
+        const label = document.getElementById("copy-link-label");
+        label.textContent = LM.t("copied");
+        setTimeout(function () { label.textContent = LM.t("copy-link"); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(done, done);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        done();
+      }
+    });
+
+    document.getElementById("download-card").addEventListener("click", function () {
+      if (!currentEntry) return;
+      sheet.hidden = true;
+      drawShareCard(currentEntry, pairOf(currentEntry));
+    });
+  }
+
+  function cardFont(px, weight) {
+    return (weight || "600") + " " + px +
+      "px -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', 'Segoe UI', sans-serif";
+  }
+
+  function wrapLines(ctx, text, maxWidth, maxLines) {
+    const words = text.split(/\s+/);
+    const lines = [];
+    let line = "";
+    for (const w of words) {
+      const test = line ? line + " " + w : w;
+      if (ctx.measureText(test).width <= maxWidth || !line) line = test;
+      else { lines.push(line); line = w; if (lines.length === maxLines) break; }
+    }
+    if (lines.length < maxLines && line) lines.push(line);
+    if (lines.length === maxLines) {
+      let last = lines[maxLines - 1];
+      const joined = lines.join(" ");
+      if (joined.length < text.trim().length) {
+        while (last.length > 4 && ctx.measureText(last + "…").width > maxWidth) {
+          last = last.slice(0, -1);
+        }
+        lines[maxLines - 1] = last.replace(/[,;:.!?]+$/, "") + "…";
+      }
+    }
+    return lines;
+  }
+
+  async function drawShareCard(e, pair) {
+    const W = 1080, H = 1440, M = 72;
+    const canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#FAF7F2";
+    ctx.fillRect(0, 0, W, H);
+
+    const img = new Image();
+    img.src = e.photo;
+    await new Promise(function (res, rej) { img.onload = res; img.onerror = rej; });
+
+    // photo, cover-cropped top area
+    const PH = 880;
+    const s = Math.max(W / img.width, PH / img.height);
+    const dw = img.width * s, dh = img.height * s;
+    ctx.drawImage(img, (W - dw) / 2, (PH - dh) / 2, dw, dh);
+    ctx.fillStyle = "#FAF7F2";
+    ctx.fillRect(0, PH, W, H - PH);
+
+    // brand block
+    ctx.fillStyle = "#B23A2E";
+    const sealY = 950;
+    if (ctx.roundRect) {
+      ctx.beginPath(); ctx.roundRect(M, sealY, 84, 84, 18); ctx.fill();
+    } else ctx.fillRect(M, sealY, 84, 84);
+    ctx.fillStyle = "#FFF7F2";
+    ctx.font = cardFont(46);
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("京", M + 42, sealY + 46);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#1D1C1A";
+    ctx.font = cardFont(44, "700");
+    ctx.fillText("Living Museum of Beijing", M + 110, sealY + 30);
+    ctx.fillStyle = "#6E6760";
+    ctx.font = cardFont(28, "500");
+    ctx.fillText("one city, year by year", M + 110, sealY + 70);
+
+    // QR to the story page
+    try {
+      const qr = qrcode(0, "M");
+      qr.addData(entryUrl(e));
+      qr.make();
+      const n = qr.getModuleCount();
+      const qrSize = 150, quiet = 8, cell = qrSize / (n + quiet * 2);
+      const qx = W - M - qrSize, qy = sealY + 2;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(qx - 6, qy - 6, qrSize + 12, qrSize + 12);
+      ctx.fillStyle = "#1D1C1A";
+      for (let r = 0; r < n; r++) {
+        for (let c = 0; c < n; c++) {
+          if (qr.isDark(r, c)) {
+            ctx.fillRect(qx + (c + quiet) * cell, qy + (r + quiet) * cell, Math.ceil(cell), Math.ceil(cell));
+          }
+        }
+      }
+    } catch (err) { /* card still ships without QR */ }
+
+    // year line (+ pair years)
+    ctx.fillStyle = "#B23A2E";
+    ctx.font = cardFont(34, "700");
+    ctx.fillText(
+      pair ? Math.min(e.year, pair.year) + "  ⇄  " + Math.max(e.year, pair.year) + "  ·  BEIJING"
+           : e.year + "  ·  BEIJING",
+      M, 1108);
+
+    // title
+    ctx.fillStyle = "#1D1C1A";
+    ctx.font = cardFont(50, "700");
+    const titleLines = wrapLines(ctx, e.title, W - M * 2, 2);
+    let y = 1168;
+    for (const ln of titleLines) { ctx.fillText(ln, M, y); y += 60; }
+
+    // story excerpt
+    ctx.fillStyle = "#3A3631";
+    ctx.font = cardFont(30, "400");
+    const storyLines = wrapLines(ctx, e.story, W - M * 2, 3);
+    y += 4;
+    for (const ln of storyLines) { ctx.fillText(ln, M, y); y += 44; }
+
+    // credit
+    if (e.credit) {
+      ctx.fillStyle = "#A39C94";
+      ctx.font = cardFont(24, "500");
+      ctx.fillText("· " + e.credit, M, H - 40);
+    }
+
+    canvas.toBlob(function (blob) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "living-museum-story-" + e.id + ".png";
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    }, "image/png");
+  }
+
   function initDetail() {
-    document.getElementById("detail-close").addEventListener("click", function () {
-      document.getElementById("detail-panel").hidden = true;
-    });
+    document.getElementById("detail-close").addEventListener("click", closeDetail);
     document.addEventListener("keydown", function (ev) {
-      if (ev.key === "Escape") document.getElementById("detail-panel").hidden = true;
+      if (ev.key === "Escape") closeDetail();
     });
+    initCompare();
+    initShare();
   }
 
   // ---------- era overlays ----------
@@ -269,6 +509,13 @@
       .then(function (data) {
         entries = data;
         initControls();
+        // deep link: /?entry=<id> focuses and opens the story
+        const want = Number(new URLSearchParams(location.search).get("entry"));
+        const hit = entries.find(function (x) { return x.id === want; });
+        if (hit) {
+          map.setView([hit.lat, hit.lng], Math.max(map.getZoom(), 15));
+          showDetail(hit, { fromLoad: true });
+        }
       })
       .catch(function () {
         document.getElementById("years-count").textContent = "—";

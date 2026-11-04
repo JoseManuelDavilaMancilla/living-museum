@@ -85,10 +85,12 @@
     const fStory = field("s-" + e.id, "Story", e.story, { textarea: true });
     const fYear = field("y-" + e.id, "Year", e.year, { type: "number", min: 1800, max: 2100 });
     const fCredit = field("c-" + e.id, "Credit", e.credit);
+    const fPair = field("p-" + e.id, "Pair code (same code on two entries = then/now pair)", e.pair_id);
     body.appendChild(fTitle);
     body.appendChild(fStory);
     body.appendChild(fYear);
     body.appendChild(fCredit);
+    body.appendChild(fPair);
 
     const mapDiv = document.createElement("div");
     mapDiv.className = "minimap";
@@ -112,6 +114,7 @@
           story: $("s-" + e.id).value.trim(),
           year: Number($("y-" + e.id).value),
           credit: $("c-" + e.id).value.trim(),
+          pair_id: $("p-" + e.id).value.trim(),
           lat: pos.lat, lng: pos.lng
         })
       }).then(function () { saveBtn.textContent = "Saved"; setTimeout(function () { saveBtn.textContent = "Save edits"; }, 1400); })

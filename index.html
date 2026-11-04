@@ -53,10 +53,33 @@
       <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     </button>
     <img class="detail-photo" id="detail-photo" alt="">
+    <div class="compare-wrap" id="compare-wrap" hidden aria-label="Then and now comparison, drag to compare">
+      <img class="cmp-img" id="cmp-old" alt="">
+      <img class="cmp-img cmp-new" id="cmp-new" alt="">
+      <span class="cmp-label" id="cmp-old-year"></span>
+      <span class="cmp-label cmp-label-r" id="cmp-new-year"></span>
+      <div class="cmp-divider"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 4L2 8l3 4M11 4l3 4-3 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </div>
     <div class="detail-body">
       <div class="detail-meta">
-        <span class="year-chip" id="detail-year"></span>
-        <a class="detail-photo-link" id="detail-photo-link" target="_blank" rel="noopener" data-i18n="open-photo">Open photo</a>
+        <div class="year-chips">
+          <span class="year-chip" id="detail-year"></span>
+          <span class="year-chip" id="detail-year-pair" hidden></span>
+        </div>
+        <div class="detail-links">
+          <button class="detail-share" id="share-btn" type="button">
+            <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10.5V2.5M5 5l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 9v3.5c0 .8.7 1.5 1.5 1.5h7c.8 0 1.5-.7 1.5-1.5V9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <span data-i18n="share">Share</span></button>
+          <a class="detail-photo-link" id="detail-photo-link" target="_blank" rel="noopener" data-i18n="open-photo">Open photo</a>
+        </div>
+      </div>
+      <div class="share-sheet glass" id="share-sheet" hidden>
+        <button type="button" id="copy-link">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 6h7v7H6zM3 10V3h7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span id="copy-link-label" data-i18n="copy-link">Copy link</span></button>
+        <button type="button" id="download-card">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span data-i18n="download-card">Download share card</span></button>
       </div>
       <h2 class="detail-title" id="detail-title"></h2>
       <p class="detail-story" id="detail-story"></p>
@@ -76,6 +99,7 @@
 <script src="js/tiles.js"></script>
 <script src="js/vendor/leaflet.js"></script>
 <script src="js/vendor/leaflet.markercluster.js"></script>
+<script src="js/vendor/qrcode.js"></script>
 <script src="js/map.js"></script>
 </body>
 </html>

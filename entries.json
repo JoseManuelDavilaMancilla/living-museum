@@ -10,6 +10,7 @@
   "thumb": "media/6/thumb.jpg",
   "credit": "Wikimedia Commons, CC0",
   "language": "en",
+  "pair_id": "yuanmingyuan-ruins",
   "created_at": "2026-11-03T16:41:12+00:00"
  },
  {
@@ -23,6 +24,7 @@
   "thumb": "media/2/thumb.jpg",
   "credit": "Wikimedia Commons, public domain",
   "language": "en",
+  "pair_id": null,
   "created_at": "2026-11-03T16:41:00+00:00"
  },
  {
@@ -36,6 +38,7 @@
   "thumb": "media/4/thumb.jpg",
   "credit": "Wikimedia Commons, public domain",
   "language": "en",
+  "pair_id": null,
   "created_at": "2026-11-03T16:41:08+00:00"
  },
  {
@@ -49,6 +52,7 @@
   "thumb": "media/8/thumb.jpg",
   "credit": "Wikimedia Commons, public domain",
   "language": "en",
+  "pair_id": null,
   "created_at": "2026-11-03T16:42:39+00:00"
  },
  {
@@ -62,6 +66,7 @@
   "thumb": "media/5/thumb.jpg",
   "credit": "Chandless collection, Wikimedia Commons, public domain",
   "language": "en",
+  "pair_id": null,
   "created_at": "2026-11-03T16:41:09+00:00"
  },
  {
@@ -75,6 +80,7 @@
   "thumb": "media/1/thumb.jpg",
   "credit": "Wikimedia Commons, public domain",
   "language": "en",
+  "pair_id": null,
   "created_at": "2026-11-03T16:40:58+00:00"
  },
  {
@@ -88,6 +94,7 @@
   "thumb": "media/3/thumb.jpg",
   "credit": "Detroit Publishing Co., Wikimedia Commons, public domain",
   "language": "en",
+  "pair_id": null,
   "created_at": "2026-11-03T16:41:06+00:00"
  },
  {
@@ -101,6 +108,7 @@
   "thumb": "media/7/thumb.jpg",
   "credit": "Thomas Child, Wikimedia Commons, public domain",
   "language": "en",
+  "pair_id": null,
   "created_at": "2026-11-03T16:42:38+00:00"
  },
  {
@@ -114,6 +122,7 @@
   "thumb": "media/9/thumb.jpg",
   "credit": "Thomas Child, Wikimedia Commons, public domain",
   "language": "en",
+  "pair_id": "yuanmingyuan-ruins",
   "created_at": "2026-11-03T16:44:50+00:00"
  }
 ]
