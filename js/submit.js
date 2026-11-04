@@ -75,7 +75,7 @@
 
   function initPicker() {
     map = L.map("pick-map", {
-      center: [39.906, 116.397], zoom: 12, minZoom: 10, maxZoom: 18,
+      center: [39.9176, 116.3972], zoom: 12, minZoom: 10, maxZoom: 18,
       zoomControl: true, scrollWheelZoom: true
     });
     LM_tileLayer(L).addTo(map);

@@ -65,7 +65,7 @@
 
   function initMap() {
     map = L.map("map", {
-      center: [39.906, 116.397],
+      center: [39.9176, 116.3972], // the Forbidden City: the city's historic heart
       zoom: 12,
       minZoom: 10,
       maxZoom: 18,
