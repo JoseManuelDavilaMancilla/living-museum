@@ -5,17 +5,13 @@
 (function () {
   "use strict";
 
-  // Historical era overlays, XYZ tiles. Live: MapWarper map 54747 "Peking 1914"
-  // (warped city-core sheet, tiles verified 2026-11-04). Dorn 1936 exists on the
-  // David Rumsey Collection; wire it after georeferencing (project references.md).
+  // Historical era overlays. DISABLED 2026-11-05: the MapWarper "Peking 1914"
+  // community warp (map 54747) is displaced ~300-400m and its scan is only
+  // 1951px wide. Replacement path: georeference the David Rumsey 1914 sheet
+  // (List No. 10959, IIIF) in Allmaps, then serve its tiles at
+  // https://allmaps.org/maps/{id}/tiles/{z}/{x}/{y}.png. See references.md.
   const ERAS = [
-    {
-      id: "peking1914",
-      name: "Peking, 1914",
-      nameZh: "北京 · 1914",
-      tileUrl: "https://mapwarper.net/maps/tile/54747/{z}/{x}/{y}.png",
-      attribution: "Peking 1914, via MapWarper"
-    },
+    { id: "peking1914", name: "Peking, 1914", nameZh: "北京 · 1914", tileUrl: null },
     { id: "dorn", name: "Frank Dorn's Peiping, 1936", nameZh: "老北京风俗地图 · 1936", tileUrl: null }
   ];
 
