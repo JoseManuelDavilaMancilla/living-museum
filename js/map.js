@@ -21,10 +21,12 @@
   // mode: "server" | "static"
   const state = {
     mode: "static",
-    filter: "all",
+    yearLo: null,        // active range, null = full extent
+    yearHi: null,
+    extent: [1800, 2100], // data-driven min/max year
     theme: null,
     entries: [],        // static cache / current photo-mode results
-    stats: { total: 0, decades: {}, tags: [] },
+    stats: { total: 0, min_year: null, max_year: null, tags: [] },
     taxonomy: [],       // [{key,en,zh}]
     reqId: 0,
     featured: null
@@ -32,30 +34,6 @@
 
   let map, cluster, dotLayer;
   const eraLayers = new Map();
-
-  function decadeKey(year) {
-    if (year < 1900) return "pre";
-    return String(Math.floor(year / 10) * 10);
-  }
-
-  function decadeRange(key) {
-    if (key === "pre") return [1800, 1899];
-    const start = Number(key);
-    return [start, start + 9];
-  }
-
-  function bucketOrder() {
-    const keys = state.stats.decades || {};
-    const order = [];
-    if (keys.pre) order.push("pre");
-    for (let d = 1900; d <= 2020; d += 10) if (keys[String(d)]) order.push(String(d));
-    return order;
-  }
-
-  function bucketLabel(key) {
-    if (key === "pre") return LM.t("pre-1900");
-    return key + "s";
-  }
 
   function tagLabel(key) {
     const t = state.taxonomy.find(function (x) { return x.key === key; });
@@ -169,7 +147,7 @@
 
   function staticVisible() {
     return state.entries.filter(function (e) {
-      if (state.filter !== "all" && decadeKey(e.year) !== state.filter) return false;
+      if (state.yearLo !== null && (e.year < state.yearLo || e.year > state.yearHi)) return false;
       if (state.theme && !(e.tags || []).includes(state.theme)) return false;
       return true;
     });
@@ -192,10 +170,9 @@
 
   function filterParams() {
     const p = new URLSearchParams();
-    if (state.filter !== "all") {
-      const r = decadeRange(state.filter);
-      p.set("yearmin", r[0]);
-      p.set("yearmax", r[1]);
+    if (state.yearLo !== null) {
+      p.set("yearmin", state.yearLo);
+      p.set("yearmax", state.yearHi);
     }
     if (state.theme) p.set("tag", state.theme);
     return p;
@@ -223,63 +200,38 @@
 
   // ---------- controls ----------
 
-  function buildChips() {
-    const wrap = document.getElementById("decade-chips");
-    wrap.innerHTML = "";
-    const mk = function (key, label) {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "chip" + (state.filter === key ? " on" : "");
-      b.textContent = label;
-      b.addEventListener("click", function () { setFilter(key); });
-      wrap.appendChild(b);
-    };
-    mk("all", LM.t("all"));
-    bucketOrder().forEach(function (k) { mk(k, bucketLabel(k)); });
-
-    // theme chips (only tags in use)
-    const tw = document.getElementById("theme-chips");
-    tw.innerHTML = "";
-    const tAll = document.createElement("button");
-    tAll.type = "button";
-    tAll.className = "chip" + (state.theme === null ? " on" : "");
-    tAll.textContent = LM.t("all");
-    tAll.addEventListener("click", function () {
-      state.theme = null;
-      buildChips();
-      refresh();
-    });
-    tw.appendChild(tAll);
-    (state.stats.tags || []).forEach(function (t) {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "chip theme-chip" + (state.theme === t.key ? " on" : "");
-      b.textContent = tagLabel(t.key) + " " + t.count;
-      b.addEventListener("click", function () {
-        state.theme = state.theme === t.key ? null : t.key;
-        buildChips();
-        refresh();
-      });
-      tw.appendChild(b);
-    });
+  function fullRange() {
+    return state.yearLo === null ||
+      (state.yearLo <= state.extent[0] && state.yearHi >= state.extent[1]);
   }
 
-  function setFilter(key, opts) {
-    state.filter = key;
-    buildChips();
-    const order = bucketOrder();
-    const slider = document.getElementById("decade-slider");
-    if (key !== "all") {
-      const idx = order.indexOf(key);
-      if (idx >= 0) { slider.value = String(idx); updateSliderFill(slider); }
+  function updateRangeUI() {
+    const lo = document.getElementById("year-lo");
+    const hi = document.getElementById("year-hi");
+    lo.value = state.yearLo === null ? state.extent[0] : state.yearLo;
+    hi.value = state.yearHi === null ? state.extent[1] : state.yearHi;
+    const min = state.extent[0], max = state.extent[1];
+    const span = Math.max(1, max - min);
+    const a = ((lo.value - min) / span) * 100;
+    const b = ((hi.value - min) / span) * 100;
+    const fill = document.getElementById("range-fill");
+    fill.style.left = a + "%";
+    fill.style.width = Math.max(0, b - a) + "%";
+    document.getElementById("range-readout").textContent =
+      fullRange() ? LM.t("all-years") : lo.value + " – " + hi.value;
+  }
+
+  function setRange(lo, hi, opts) {
+    if (lo > hi) { const t = lo; lo = hi; hi = t; }
+    if (lo <= state.extent[0] && hi >= state.extent[1]) {
+      state.yearLo = state.yearHi = null;
+    } else {
+      state.yearLo = lo;
+      state.yearHi = hi;
     }
+    updateRangeUI();
     if (!(opts && opts.fromPlay)) stopPlay();
     refresh();
-  }
-
-  function updateSliderFill(slider) {
-    const max = Number(slider.max) || 1;
-    slider.style.setProperty("--fill", (Number(slider.value) / max * 100) + "%");
   }
 
   function stopPlay() {
@@ -291,31 +243,69 @@
   }
 
   function initControls() {
-    const slider = document.getElementById("decade-slider");
-    const order = bucketOrder();
-    slider.min = "0";
-    slider.max = String(Math.max(1, order.length - 1));
-    updateSliderFill(slider);
-    slider.addEventListener("input", function () {
-      updateSliderFill(slider);
-      setFilter(order[Number(slider.value)], { fromPlay: true });
+    const lo = document.getElementById("year-lo");
+    const hi = document.getElementById("year-hi");
+    lo.min = hi.min = String(state.extent[0]);
+    lo.max = hi.max = String(state.extent[1]);
+    lo.step = hi.step = "1";
+    lo.addEventListener("input", function () {
+      if (Number(lo.value) > Number(hi.value)) lo.value = hi.value;
+      setRange(Number(lo.value), Number(hi.value));
     });
+    hi.addEventListener("input", function () {
+      if (Number(hi.value) < Number(lo.value)) hi.value = lo.value;
+      setRange(Number(lo.value), Number(hi.value));
+    });
+    document.getElementById("range-min-label").textContent = state.extent[0];
+    document.getElementById("range-max-label").textContent = state.extent[1];
+    updateRangeUI();
 
     document.getElementById("play-btn").addEventListener("click", function () {
       if (playTimer) { stopPlay(); return; }
       const btn = this;
       btn.classList.add("playing");
-      let i = order.indexOf(state.filter) + 1;
+      const step = Math.max(1, Math.round((state.extent[1] - state.extent[0]) / 30));
+      let cursor = state.extent[0];
+      setRange(cursor, Math.min(cursor + step, state.extent[1]), { fromPlay: true });
       playTimer = setInterval(function () {
-        if (i >= order.length) { stopPlay(); return; }
-        slider.value = String(i);
-        updateSliderFill(slider);
-        setFilter(order[i], { fromPlay: true });
-        i += 1;
-      }, 1500);
+        cursor += step;
+        if (cursor >= state.extent[1]) {
+          setRange(state.extent[0], state.extent[1], { fromPlay: true });
+          stopPlay();
+          return;
+        }
+        setRange(state.extent[0], cursor, { fromPlay: true });
+      }, 600);
     });
 
-    buildChips();
+    buildThemeChips();
+  }
+
+  function buildThemeChips() {
+    const tw = document.getElementById("theme-chips");
+    tw.innerHTML = "";
+    const tAll = document.createElement("button");
+    tAll.type = "button";
+    tAll.className = "chip" + (state.theme === null ? " on" : "");
+    tAll.textContent = LM.t("all");
+    tAll.addEventListener("click", function () {
+      state.theme = null;
+      buildThemeChips();
+      refresh();
+    });
+    tw.appendChild(tAll);
+    (state.stats.tags || []).forEach(function (t) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "chip theme-chip" + (state.theme === t.key ? " on" : "");
+      b.textContent = tagLabel(t.key) + " " + t.count;
+      b.addEventListener("click", function () {
+        state.theme = state.theme === t.key ? null : t.key;
+        buildThemeChips();
+        refresh();
+      });
+      tw.appendChild(b);
+    });
   }
 
   // ---------- detail panel ----------
@@ -594,8 +584,8 @@
 
   function initEras() {
     const wrap = document.getElementById("era-toggles");
-    // Show the era section only when at least one verified tile layer exists.
-    // Until then the museum shows nothing rather than a promise.
+    // The era section is absent from the page until a verified overlay exists.
+    if (!wrap) return;
     if (!ERAS.some(function (e) { return e.tileUrl; })) {
       document.querySelector(".era-row").style.display = "none";
       return;
@@ -783,16 +773,16 @@
   // ---------- boot ----------
 
   function computeStaticStats() {
-    const decades = {};
     const tagCount = {};
+    let minY = null, maxY = null;
     state.entries.forEach(function (e) {
-      const k = decadeKey(e.year);
-      decades[k] = (decades[k] || 0) + 1;
+      if (minY === null || e.year < minY) minY = e.year;
+      if (maxY === null || e.year > maxY) maxY = e.year;
       (e.tags || []).forEach(function (t) { tagCount[t] = (tagCount[t] || 0) + 1; });
     });
     state.stats = {
       total: state.entries.length,
-      decades: decades,
+      min_year: minY, max_year: maxY,
       tags: Object.keys(tagCount).map(function (k) {
         return { key: k, count: tagCount[k] };
       }).sort(function (a, b) { return b.count - a.count; })
@@ -847,6 +837,9 @@
       })
       .then(function (stats) {
         state.stats = stats;
+        if (stats.min_year && stats.max_year) {
+          state.extent = [stats.min_year, stats.max_year];
+        }
         loadTaxonomy(function () {
           initControls();
           refresh();
@@ -865,6 +858,9 @@
             state.mode = "static";
             state.entries = data;
             computeStaticStats();
+            if (state.stats.min_year && state.stats.max_year) {
+              state.extent = [state.stats.min_year, state.stats.max_year];
+            }
             loadTaxonomy(function () {
               initControls();
               refresh();
