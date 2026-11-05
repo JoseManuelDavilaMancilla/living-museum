@@ -356,6 +356,16 @@
     document.getElementById("detail-photo-link").href = e.photo;
     document.getElementById("detail-year").textContent = e.year;
     document.getElementById("detail-title").textContent = e.title;
+    const voice = document.getElementById("detail-voice");
+    if (e.voice_id) {
+      const base = location.pathname.replace(/[^/]*$/, "");
+      const staticMode = state.mode === "static";
+      voice.href = (staticMode ? base + "voices/" + e.voice_id + "/" : "/v/" + e.voice_id);
+      voice.textContent = LM.t("read-interview") + " →";
+      voice.hidden = false;
+    } else {
+      voice.hidden = true;
+    }
     document.getElementById("detail-story").textContent = e.story;
     const creditEl = document.getElementById("detail-credit");
     creditEl.textContent = e.credit

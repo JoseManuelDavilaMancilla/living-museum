@@ -141,6 +141,7 @@
       fd.append("lat", state.lat);
       fd.append("lng", state.lng);
       fd.append("credit", $("in-credit").value.trim());
+      fd.append("contact", $("in-contact").value.trim());
       fd.append("language", LM.lang());
       fd.append("consent_own", "on");
       fd.append("consent_people", "on");

@@ -22,6 +22,10 @@ name, or anonymous
 
 Drag your photo file into this box, it uploads and appears as a link.
 
+### Open to a longer interview?
+
+yes / no — if yes, a reviewer will reply here and ask for a private way to reach you. Your contact details never need to appear in this public issue.
+
 ### Consent
 
 - [ ] This is my photo, or I have the right to share it

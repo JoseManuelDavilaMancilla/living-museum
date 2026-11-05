@@ -231,6 +231,132 @@
     });
   }
 
+  // ---------- voices (long-form stories) ----------
+
+  let currentStory = null; // null = creating new
+
+  async function showStories() {
+    $("queue").hidden = true;
+    $("empty-msg").hidden = true;
+    $("stories-panel").hidden = false;
+    await loadStories();
+  }
+
+  function showQueue() {
+    $("stories-panel").hidden = true;
+    $("queue").hidden = false;
+  }
+
+  function storyForm() {
+    return {
+      title: $("st-title").value.trim(),
+      interviewee: $("st-who").value.trim(),
+      entry_id: $("st-entry").value || null,
+      language: $("st-lang").value,
+      body: $("st-body").value
+    };
+  }
+
+  async function saveStory(publish) {
+    const f = storyForm();
+    if (!f.title || !f.body.trim()) { alert("Title and body are required"); return; }
+    const payload = Object.assign({}, f, { status: publish ? "published" : "draft" });
+    if (currentStory) {
+      await api("/api/admin/stories/" + currentStory, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+    } else {
+      const made = await api("/api/admin/stories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(f)
+      });
+      currentStory = made.id;
+      if (publish) {
+        await api("/api/admin/stories/" + currentStory, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "published" })
+        });
+      }
+    }
+    clearStoryForm();
+    await loadStories();
+  }
+
+  function clearStoryForm() {
+    currentStory = null;
+    ["st-title", "st-who", "st-entry", "st-body"].forEach(function (id) { $(id).value = ""; });
+    $("st-lang").value = "en";
+  }
+
+  async function loadStories() {
+    const list = await api("/api/admin/stories");
+    const q = $("stories-list");
+    q.innerHTML = "";
+    list.forEach(function (s) {
+      const card = document.createElement("div");
+      card.className = "qcard";
+      const body = document.createElement("div");
+      body.className = "qcard-body";
+      const meta = document.createElement("div");
+      meta.className = "qmeta";
+      meta.textContent = "#" + s.id + " · " + s.status + (s.published_at ? " · " + s.published_at.slice(0, 10) : "") +
+        (s.entry_id ? " · entry #" + s.entry_id : "");
+      const title = document.createElement("div");
+      title.style.fontWeight = "700";
+      title.textContent = s.title + (s.interviewee ? " — " + s.interviewee : "");
+      const ex = document.createElement("div");
+      ex.style.cssText = "font-size:12.5px;color:var(--ink-3)";
+      ex.textContent = s.excerpt + "…";
+      const actions = document.createElement("div");
+      actions.className = "qcard-actions";
+      actions.style.marginTop = "0";
+      const edit = document.createElement("button");
+      edit.className = "btn btn-ghost"; edit.type = "button"; edit.textContent = "Edit";
+      edit.addEventListener("click", function () {
+        currentStory = s.id;
+        $("st-title").value = s.title;
+        $("st-who").value = s.interviewee || "";
+        $("st-entry").value = s.entry_id || "";
+        $("st-lang").value = s.language || "en";
+        $("st-body").value = s.body || "";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      const pub = document.createElement("button");
+      pub.className = "btn btn-green"; pub.type = "button";
+      pub.textContent = s.status === "published" ? "Unpublish" : "Publish";
+      pub.addEventListener("click", async function () {
+        await api("/api/admin/stories/" + s.id, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: s.status === "published" ? "draft" : "published" })
+        });
+        await loadStories();
+      });
+      const del = document.createElement("button");
+      del.className = "btn btn-quiet"; del.type = "button"; del.textContent = "Delete";
+      del.addEventListener("click", async function () {
+        if (!confirm("Delete this story for good?")) return;
+        await api("/api/admin/stories/" + s.id, { method: "DELETE" });
+        await loadStories();
+      });
+      body.appendChild(meta); body.appendChild(title); body.appendChild(ex);
+      actions.appendChild(edit); actions.appendChild(pub); actions.appendChild(del);
+      body.appendChild(actions);
+      card.appendChild(body);
+      q.appendChild(card);
+    });
+  }
+
+  function initStories() {
+    $("st-save").addEventListener("click", function () { saveStory(false).catch(function (e) { alert(e.message); }); });
+    $("st-publish").addEventListener("click", function () { saveStory(true).catch(function (e) { alert(e.message); }); });
+    $("st-new").addEventListener("click", clearStoryForm);
+  }
+
   // ---------- boot ----------
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -252,10 +378,16 @@
     $("admin-tabs").addEventListener("click", function (ev) {
       const b = ev.target.closest(".admin-tab");
       if (!b) return;
-      status = b.dataset.status;
       document.querySelectorAll(".admin-tab").forEach(function (t) { t.classList.toggle("on", t === b); });
-      load().catch(function () {});
+      if (b.dataset.status === "stories") {
+        showStories().catch(function () {});
+      } else {
+        status = b.dataset.status;
+        showQueue();
+        load().catch(function () {});
+      }
     });
+    initStories();
 
     $("logout-btn").addEventListener("click", function () {
       fetch("/api/admin/logout", { method: "POST" }).then(showLogin);
