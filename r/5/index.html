@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>An interview is in the making · Living Museum of Beijing</title>
+<link rel="icon" href="../../img/seal.svg" type="image/svg+xml">
+<style>
+body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Segoe UI",sans-serif;
+  background:#FAF7F2; color:#1D1C1A; }
+.card { max-width:640px; margin:0 auto; padding:56px 22px 64px; }
+a.back { display:inline-flex; align-items:center; gap:8px; color:#6E6760; text-decoration:none;
+  font-size:14px; font-weight:550; margin-bottom:26px; }
+a.back:hover { color:#B23A2E; }
+img.cover { width:100%; border-radius:18px; box-shadow:0 12px 32px rgba(29,28,26,.14); display:block; margin-bottom:20px; }
+.kicker { font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#B23A2E; margin-bottom:8px; }
+h1 { font-size:26px; letter-spacing:-.02em; line-height:1.25; margin:0 0 8px; }
+.onmap { font-size:14px; color:#6E6760; margin-bottom:18px; }
+.onmap a { color:#B23A2E; text-decoration:none; font-weight:600; }
+.story { font-size:15px; line-height:1.65; color:#3A3631; white-space:pre-line;
+  border-left:3px solid #F0DCD6; padding-left:14px; margin:0 0 22px; }
+.invite { font-size:16px; line-height:1.6; margin:0 0 6px; }
+.invite-zh { font-size:13.5px; color:#6E6760; margin:0 0 22px; }
+.field { margin-bottom:14px; }
+.field label { display:block; font-size:13px; font-weight:600; margin-bottom:5px; }
+.field input, .field textarea { width:100%; font-family:inherit; font-size:15px; color:#1D1C1A;
+  padding:10px 12px; border:1px solid rgba(29,28,26,.18); border-radius:10px; background:#fff; outline:none;
+  box-sizing:border-box; }
+.field input:focus, .field textarea:focus { border-color:#B23A2E; box-shadow:0 0 0 3.5px rgba(178,58,46,.14); }
+.field textarea { min-height:84px; resize:vertical; }
+.privacy { font-size:12.5px; color:#A39C94; margin:0 0 16px; }
+button.send { display:inline-block; background:#B23A2E; color:#FFF7F2; font-family:inherit; font-weight:600;
+  font-size:15px; padding:12px 22px; border:none; border-radius:999px; cursor:pointer;
+  box-shadow:0 6px 16px rgba(142,42,32,.3); }
+button.send:disabled { opacity:.5; cursor:default; }
+.done { background:#E7F3EC; color:#1F5E3B; border-radius:12px; padding:14px 16px; font-size:15px; }
+.err { color:#8E2A20; font-size:13px; margin-top:8px; display:none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <a class="back" href="../../voices.html">← Voices</a>
+  <img class="cover" src="../../media/5/thumb.jpg" alt="The Lama Temple">
+  <div class="kicker">Reserved · in the making</div>
+  <h1>An interview about this photograph is in the making</h1>
+  <div class="onmap">On the map: <a href="../../index.html?entry=5">The Lama Temple · 1900</a></div>
+  <p class="story">The great Tibetan Buddhist monastery around 1900. A century and a half earlier the Qianlong emperor had lived here as a boy prince, before his father took the throne.</p>
+  <p class="invite">If this is your photograph, or you know the story behind it, we would love to talk. Leave a way to reach you and a reviewer will be in touch.</p>
+  <p class="invite-zh">如果这是你的照片，或者你知道照片背后的故事，我们很想和你聊聊。留下联系方式，审核者会与你联系。</p>
+  <form id="lead-form">
+    <div class="field"><label for="l-name">Your name (optional)</label>
+      <input type="text" id="l-name" maxlength="80"></div>
+    <div class="field"><label for="l-contact">How can we reach you? (email or WeChat)</label>
+      <input type="text" id="l-contact" maxlength="160" placeholder="email / WeChat"></div>
+    <div class="field"><label for="l-note">Anything you'd like to say (optional)</label>
+      <textarea id="l-note" maxlength="600"></textarea></div>
+    <p class="privacy" id="privacy-note">Your contact goes only to the museum's reviewers, never on the public site.</p>
+    <button class="send" type="submit" id="lead-send">I can tell this story</button>
+    <div class="err" id="lead-err"></div>
+  </form>
+  <div class="done" id="lead-done" hidden></div>
+</div>
+<script>
+(function () {
+  var entryId = 5;
+  var entryTitle = "The Lama Temple";
+  var form = document.getElementById('lead-form');
+  var apiAvailable = null;
+  fetch('/api/health').then(function (r) { apiAvailable = r.ok; adjust(); })
+    .catch(function () { apiAvailable = false; adjust(); });
+  function adjust() {
+    if (apiAvailable === false) {
+      document.getElementById('privacy-note').textContent =
+        'This public site runs without a server: submitting opens a GitHub thread. Keep private details out of the first message; a reviewer replies and you continue in private.';
+      document.getElementById('lead-send').textContent = 'I can tell this story → GitHub';
+      document.getElementById('l-contact').placeholder = 'your GitHub username';
+    }
+  }
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var name = document.getElementById('l-name').value.trim();
+    var contact = document.getElementById('l-contact').value.trim();
+    var note = document.getElementById('l-note').value.trim();
+    var errEl = document.getElementById('lead-err');
+    errEl.style.display = 'none';
+    if (!contact) {
+      errEl.textContent = 'Please leave a way to reach you.';
+      errEl.style.display = 'block';
+      return;
+    }
+    if (apiAvailable === false) {
+      var body = 'Interview lead for photograph #' + entryId + ': ' + entryTitle + '\n\n' +
+        '### Name\n' + (name || 'anonymous') + '\n\n### Reach me\n' + contact +
+        '\n(contact exchange continues in this thread or in private)\n\n### Note\n' + (note || '-') + '\n';
+      window.location.href = 'https://github.com/JoseManuelDavilaMancilla/living-museum/issues/new?title=' +
+        encodeURIComponent('Interview lead: ' + entryTitle) + '&body=' + encodeURIComponent(body);
+      return;
+    }
+    var btn = document.getElementById('lead-send');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    fetch('/api/lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entry_id: entryId, name: name, contact: contact, note: note })
+    }).then(function (r) {
+      if (!r.ok) return r.json().then(function (b) { throw new Error(b.detail || 'http ' + r.status); });
+      form.hidden = true;
+      var done = document.getElementById('lead-done');
+      done.hidden = false;
+      done.textContent = 'Thank you. A reviewer will reach out soon.';
+    }).catch(function (e) {
+      btn.disabled = false; btn.textContent = 'I can tell this story';
+      errEl.textContent = e.message || 'Something went wrong, please try again.';
+      errEl.style.display = 'block';
+    });
+  });
+})();
+</script>
+</body>
+</html>

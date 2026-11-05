@@ -240,6 +240,27 @@
     $("empty-msg").hidden = true;
     $("stories-panel").hidden = false;
     await loadStories();
+    await loadLeads();
+  }
+
+  async function loadLeads() {
+    const list = await api("/api/admin/leads").catch(function () { return []; });
+    const box = document.getElementById("leads-box");
+    if (!box) return;
+    box.innerHTML = "";
+    if (!list.length) {
+      box.innerHTML = "<p style='font-size:13px;color:var(--ink-3);margin:0'>No leads yet.</p>";
+      return;
+    }
+    list.forEach(function (l) {
+      const row = document.createElement("div");
+      row.className = "qmeta";
+      row.style.cssText = "font-size:13px;color:#3A3631;display:block;margin-bottom:6px";
+      row.textContent = "#" + l.entry_id + " " + (l.entry_title || "") + " · " +
+        (l.name || "anonymous") + " · " + l.contact + (l.note ? " · “" + l.note + "”" : "") +
+        " · " + (l.created_at || "").slice(0, 16).replace("T", " ");
+      box.appendChild(row);
+    });
   }
 
   function showQueue() {

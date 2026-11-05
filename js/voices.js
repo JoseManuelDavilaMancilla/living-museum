@@ -13,6 +13,10 @@
     return MODE === "server" ? "/?entry=" + entryId : "index.html?entry=" + entryId;
   }
 
+  function reservedUrl(entryId) {
+    return MODE === "server" ? "/r/" + entryId : "r/" + entryId + "/";
+  }
+
   const PLACEHOLDER_TOPICS = [
     "The story behind this photograph",
     "One photo, one afternoon, retold",
@@ -65,7 +69,7 @@
   function placeholderFor(entry, i) {
     const a = document.createElement("a");
     a.className = "voice-card placeholder";
-    a.href = mapUrl(entry.id);
+    a.href = reservedUrl(entry.id);
     const wrap = document.createElement("div");
     wrap.className = "voice-cover-wrap";
     const img = document.createElement("img");
