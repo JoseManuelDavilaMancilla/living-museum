@@ -169,6 +169,9 @@ def main() -> None:
         story = sec.get("story", "").strip()
         year_s = re.sub(r"\D", "", sec.get("year", ""))[:4]
         credit = sec.get("credit", "").strip()
+        public_contact = sec.get("public contact", "").strip()
+        if public_contact.lower() in ("", "none", "no", "-"):
+            public_contact = None
         loc = re.findall(r"-?\d+(?:\.\d+)?", sec.get("location", ""))
         img_url = first_image_url(issue.get("body") or "")
 
@@ -211,6 +214,7 @@ def main() -> None:
             "photo": f"media/{eid}/photo.jpg",
             "thumb": f"media/{eid}/thumb.jpg",
             "credit": None if credit.lower() == "anonymous" else (credit or None),
+            "contact_public": public_contact,
             "language": "zh" if has_cjk(story) else "en",
             "pair_id": None,
             "created_at": issue["created_at"],

@@ -18,6 +18,10 @@ lat, lng (tap the map on the contribute page to get these)
 
 name, or anonymous
 
+### Public contact (optional)
+
+WeChat / email / social handle, shown on your profile page. Leave empty to stay private.
+
 ### Photo
 
 Drag your photo file into this box, it uploads and appears as a link.

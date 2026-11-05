@@ -119,6 +119,61 @@
     return picks;
   }
 
+  function profileUrl(name) {
+    const enc = encodeURIComponent(name);
+    return MODE === "server" ? "/p/" + enc : "p/" + enc + "/";
+  }
+
+  function personCard(p, thumbByEntry) {
+    const a = document.createElement("a");
+    a.className = "person-card";
+    a.href = profileUrl(p.name);
+    const img = document.createElement("img");
+    img.src = thumbByEntry(p.entry_ids[0]) || "";
+    img.alt = "";
+    a.appendChild(img);
+    const body = document.createElement("span");
+    body.className = "person-body";
+    const n = document.createElement("span");
+    n.className = "person-name";
+    n.textContent = p.name;
+    const c = document.createElement("span");
+    c.className = "person-count";
+    c.textContent = p.count + (p.first_year !== p.last_year
+      ? " · " + p.first_year + "–" + p.last_year
+      : " · " + p.first_year);
+    body.appendChild(n); body.appendChild(c);
+    a.appendChild(body);
+    return a;
+  }
+
+  function renderPeople(list) {
+    const row = document.getElementById("people-row");
+    row.innerHTML = "";
+    if (!list.length) {
+      row.hidden = true;
+      document.querySelector('[data-i18n="people"]').style.display = "none";
+      return;
+    }
+    const thumbByEntry = function (id) {
+      const e = ENTRIES.find(function (x) { return x.id === id; });
+      return e ? e.thumb : null;
+    };
+    list.slice(0, 12).forEach(function (p) { row.appendChild(personCard(p, thumbByEntry)); });
+  }
+
+  function loadPeople() {
+    return fetch("/api/people")
+      .then(function (r) { if (!r.ok) throw new Error("no api"); return r.json(); })
+      .catch(function () {
+        return fetch("people.json").then(function (r) {
+          if (!r.ok) return [];
+          return r.json();
+        });
+      })
+      .catch(function () { return []; });
+  }
+
   function render(list) {
     const grid = document.getElementById("voices-grid");
     grid.innerHTML = "";
@@ -140,6 +195,7 @@
     loadEntries()
       .then(function (entries) {
         ENTRIES = entries;
+        loadPeople().then(renderPeople);
         return fetch("/api/stories").then(function (r) {
           if (!r.ok) throw new Error("no api");
           return r.json();

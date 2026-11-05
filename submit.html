@@ -6,7 +6,7 @@
 <title>Contribute · Living Museum of Beijing</title>
 <link rel="icon" href="img/seal.svg" type="image/svg+xml">
 <link rel="stylesheet" href="js/vendor/leaflet.css">
-<link rel="stylesheet" href="css/site.css?v=1793860973">
+<link rel="stylesheet" href="css/site.css?v=1793862292">
 </head>
 <body>
 <header class="topbar">
@@ -47,6 +47,11 @@
         <input type="text" id="in-credit" maxlength="60">
         <div class="help">Leave empty to stay anonymous.</div>
       </div>
+      <div class="field">
+        <label for="in-contact-pub">Public contact (optional)</label>
+        <input type="text" id="in-contact-pub" maxlength="120" placeholder="WeChat / email / social handle">
+        <div class="help">Shown on your profile page so people can reach you. Leave empty to stay private.</div>
+      </div>
       <div class="field" id="f-place">
         <div class="help">Tap the map to place the photo.</div>
         <div class="pick-map" id="pick-map"></div>
@@ -58,8 +63,8 @@
     </form>
   </div>
 </main>
-<script src="js/tiles.js?v=1793860973"></script>
-<script src="js/vendor/leaflet.js?v=1793860973"></script>
+<script src="js/tiles.js?v=1793862292"></script>
+<script src="js/vendor/leaflet.js?v=1793862292"></script>
 <script>
 (function () {
   var state = { lat: null, lng: null };
@@ -99,6 +104,7 @@
     var body = "### Title\n" + title + "\n\n### Story\n" + story +
       "\n\n### Year\n" + year + "\n\n### Location\n" + state.lat + ", " + state.lng +
       "\n\n### Credit\n" + (credit || "anonymous") +
+      "\n\n### Public contact\n" + (document.getElementById('in-contact-pub').value.trim() || "none") +
       "\n\n### Photo\nDrag your photo file into this box, it will upload and appear as a link.\n\n";
     var url = "https://github.com/JoseManuelDavilaMancilla/living-museum/issues/new?title=" +
       encodeURIComponent(title) + "&body=" + encodeURIComponent(body);

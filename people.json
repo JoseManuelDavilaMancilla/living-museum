@@ -1,0 +1,47 @@
+[
+ {
+  "name": "Wikimedia Commons",
+  "count": 5,
+  "contact_public": null,
+  "first_year": 1900,
+  "last_year": 2019,
+  "entry_ids": [
+   6,
+   2,
+   4,
+   8,
+   1
+  ]
+ },
+ {
+  "name": "Thomas Child",
+  "count": 2,
+  "contact_public": null,
+  "first_year": 1870,
+  "last_year": 1877,
+  "entry_ids": [
+   7,
+   9
+  ]
+ },
+ {
+  "name": "Chandless collection",
+  "count": 1,
+  "contact_public": null,
+  "first_year": 1900,
+  "last_year": 1900,
+  "entry_ids": [
+   5
+  ]
+ },
+ {
+  "name": "Detroit Publishing Co.",
+  "count": 1,
+  "contact_public": null,
+  "first_year": 1890,
+  "last_year": 1890,
+  "entry_ids": [
+   3
+  ]
+ }
+]
