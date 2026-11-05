@@ -120,8 +120,9 @@
   }
 
   function profileUrl(name) {
-    const enc = encodeURIComponent(name);
-    return MODE === "server" ? "/p/" + enc : "p/" + enc + "/";
+    // server route takes an encoded segment; the static tree uses the raw
+    // name as the folder, browsers encode automatically
+    return MODE === "server" ? "/p/" + encodeURIComponent(name) : "p/" + name + "/";
   }
 
   function personCard(p, thumbByEntry) {
