@@ -98,6 +98,9 @@
 
   function pickPlaceholderEntries(stories) {
     const taken = new Set(stories.map(function (s) { return s.entry_id; }));
+    // Prefer the data-side reservation flag (same set the map panel shows).
+    const flagged = ENTRIES.filter(function (e) { return e.voice_reserved && !taken.has(e.id); });
+    if (flagged.length) return flagged.slice(0, Math.max(0, 3 - stories.length));
     const free = ENTRIES.filter(function (e) { return !taken.has(e.id) && !e.voice_id; });
     if (!free.length) return [];
     free.sort(function (a, b) { return a.year - b.year; });

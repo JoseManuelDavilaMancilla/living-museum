@@ -357,11 +357,20 @@
     document.getElementById("detail-year").textContent = e.year;
     document.getElementById("detail-title").textContent = e.title;
     const voice = document.getElementById("detail-voice");
+    const voiceBase = state.mode === "static"
+      ? location.pathname.replace(/[^/]*$/, "") + "voices.html"
+      : "/voices.html";
     if (e.voice_id) {
       const base = location.pathname.replace(/[^/]*$/, "");
       const staticMode = state.mode === "static";
       voice.href = (staticMode ? base + "voices/" + e.voice_id + "/" : "/v/" + e.voice_id);
       voice.textContent = LM.t("read-interview") + " →";
+      voice.classList.remove("reserved");
+      voice.hidden = false;
+    } else if (e.voice_reserved) {
+      voice.href = voiceBase;
+      voice.textContent = LM.t("voice-reserved-note") + " →";
+      voice.classList.add("reserved");
       voice.hidden = false;
     } else {
       voice.hidden = true;
